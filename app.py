@@ -1,15 +1,11 @@
 from flask import Flask, render_template, request, jsonify
+import openai
+import os
 
 app = Flask(__name__)
 
-# Predefined responses
-faq = {
-    "admission": "Admissions are open until June 30, 2025.",
-    "courses": "We offer B.Tech in CSE, ECE, ME, Civil, and more.",
-    "faculty": "Our faculty includes experienced professors from IITs and NITs.",
-    "events": "Upcoming events include TechFest on April 15th and Workshop on May 2nd.",
-    "contact": "You can contact us at contact@college.edu or call +91-1234567890."
-}
+# Set your OpenAI API key
+openai.api_key = "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"  # Replace with your actual API key
 
 @app.route('/')
 def home():
@@ -17,17 +13,19 @@ def home():
 
 @app.route('/get-response', methods=['POST'])
 def get_response():
-    user_message = request.json.get('message').lower()
-    response = "Sorry, I don't understand. Can you rephrase?"
+    user_message = request.json.get('message')
 
-    for keyword in faq:
-        if keyword in user_message:
-            response = faq[keyword]
-            break
+    # Call OpenAI API
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # or gpt-4 if you have access
+        messages=[
+            {"role": "system", "content": "You are a helpful college assistant bot."},
+            {"role": "user", "content": user_message}
+        ]
+    )
 
-    return jsonify({'reply': response})
+    bot_reply = response['choices'][0]['message']['content'].strip()
+    return jsonify({'reply': bot_reply})
 
 if __name__ == "__main__":
-    import os
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True)
